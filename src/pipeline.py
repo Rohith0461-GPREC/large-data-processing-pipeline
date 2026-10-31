@@ -1,6 +1,5 @@
-
 import csv
-import tracemalloc
+import logging
 from pathlib import Path
 
 from src.ingestion import read_csv_in_chunks, read_json_in_chunks
@@ -33,13 +32,24 @@ def run_pipeline(file_path, chunk_size=1000):
     rejected_records = 0
     duplicate_records = 0
     schema_checked = False
+    status = "FAILED"
 
     rejected_file = f"data/rejected/rejected_{run_id}.csv"
 
+    performance = {
+        "execution_time_seconds": 0,
+        "peak_memory_mb": 0
+    }
+
     try:
+        # Create database before input validation
+        create_database()
+
+        # Start monitoring before validation
+        monitor_start = start_monitoring()
+
         input_path = Path(file_path)
 
-        # Check input file
         if not input_path.exists():
             raise FileNotFoundError(
                 f"Input file not found: {file_path}"
@@ -48,11 +58,15 @@ def run_pipeline(file_path, chunk_size=1000):
         if not input_path.is_file():
             raise ValueError("Input path is not a file.")
 
-        # Validate chunk size
-        if not isinstance(chunk_size, int) or isinstance(chunk_size, bool) or chunk_size <= 0:
-            raise ValueError("Chunk size must be a positive integer.")
+        if (
+            not isinstance(chunk_size, int)
+            or isinstance(chunk_size, bool)
+            or chunk_size <= 0
+        ):
+            raise ValueError(
+                "Chunk size must be a positive integer."
+            )
 
-        # Identify file format
         file_extension = input_path.suffix.lower()
 
         if file_extension == ".csv":
@@ -64,15 +78,14 @@ def run_pipeline(file_path, chunk_size=1000):
                 "Unsupported file format. Use CSV or JSON."
             )
 
-        logger.info(f"Pipeline started. Run ID: {run_id}")
+        logger.info(
+            f"Pipeline started. Run ID: {run_id}"
+        )
 
-        create_database()
         Path(rejected_file).parent.mkdir(
             parents=True,
             exist_ok=True
         )
-
-        monitor_start = start_monitoring()
 
         for chunk in read_chunks(file_path, chunk_size):
 
@@ -87,7 +100,9 @@ def run_pipeline(file_path, chunk_size=1000):
 
                 schema_checked = True
 
-                logger.info("Input schema validation passed")
+                logger.info(
+                    "Input schema validation passed"
+                )
 
             valid_batch = []
 
@@ -161,7 +176,9 @@ def run_pipeline(file_path, chunk_size=1000):
 
         status = "FAILED"
 
-        logger.exception("Pipeline failed")
+        logger.exception(
+            "Pipeline failed"
+        )
 
         raise
 
@@ -169,35 +186,35 @@ def run_pipeline(file_path, chunk_size=1000):
 
         end_time = get_timestamp()
 
-        performance = {
-            "execution_time_seconds": 0,
-            "peak_memory_mb": 0
-        }
-
-        if monitor_start is not None and tracemalloc.is_tracing():
+        if monitor_start is not None:
             performance = stop_monitoring(monitor_start)
 
-        if monitor_start is not None:
+        run_data = {
+            "run_id": run_id,
+            "input_file": str(file_path),
+            "start_time": start_time,
+            "end_time": end_time,
+            "total_records": total_records,
+            "inserted_records": inserted_records,
+            "duplicate_records": duplicate_records,
+            "rejected_records": rejected_records,
+            "execution_time_seconds": performance[
+                "execution_time_seconds"
+            ],
+            "peak_memory_mb": performance[
+                "peak_memory_mb"
+            ],
+            "status": status
+        }
 
-            run_data = {
-                "run_id": run_id,
-                "input_file": str(file_path),
-                "start_time": start_time,
-                "end_time": end_time,
-                "total_records": total_records,
-                "inserted_records": inserted_records,
-                "duplicate_records": duplicate_records,
-                "rejected_records": rejected_records,
-                "execution_time_seconds": performance[
-                    "execution_time_seconds"
-                ],
-                "peak_memory_mb": performance[
-                    "peak_memory_mb"
-                ],
-                "status": status
-            }
-
+        try:
             save_pipeline_run(run_data)
+
+        except Exception:
+            logger.exception(
+                "Failed to save pipeline execution metrics"
+            )
+
 
     print("\nPIPELINE REPORT")
     print("-----------------------")
@@ -207,12 +224,6 @@ def run_pipeline(file_path, chunk_size=1000):
     print(f"New records inserted: {inserted_records}")
     print(f"Duplicate records: {duplicate_records}")
     print(f"Rejected records: {rejected_records}")
-
-    print("\nRECONCILIATION REPORT")
-    print("-----------------------")
-    print(f"Accounted records: {accounted_records}")
-    print(f"Unaccounted records: {total_records - accounted_records}")
-    print(f"Reconciliation: {status}")
 
     print("\nPERFORMANCE REPORT")
     print("-----------------------")
@@ -225,8 +236,9 @@ def run_pipeline(file_path, chunk_size=1000):
         f"{performance['peak_memory_mb']} MB"
     )
 
-    print("\nRUN METRICS")
+    print("\nPIPELINE STATUS")
     print("-----------------------")
+    print(f"Status: {status}")
     print("Pipeline execution details saved to SQLite database.")
     print(f"Rejected records file: {rejected_file}")
 
