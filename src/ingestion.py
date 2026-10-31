@@ -1,7 +1,5 @@
-
 import csv
 import ijson
-from pathlib import Path
 
 
 def read_csv_in_chunks(file_path, chunk_size=1000):
@@ -44,9 +42,10 @@ def read_json_in_chunks(file_path, chunk_size=1000):
             chunk = []
 
             for _ in range(chunk_size):
-                record = next(records, None)
 
-                if record is None:
+                try:
+                    record = next(records)
+                except StopIteration:
                     break
 
                 chunk.append(record)
