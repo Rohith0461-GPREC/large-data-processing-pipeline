@@ -1,0 +1,9 @@
+customer_id,customer_name,email,age,city
+101,Rahul,rahul@gmail.com,25,Hyderabad
+102,Anjali,anjali@gmail.com,28,Bangalore
+103,Kiran,kiran@gmail.com,22,Chennai
+104,Priya,priya@gmail.com,30,Hyderabad
+105,Arjun,arjun@gmail.com,26,Mumbai
+106,Test User,invalid-email,25,Hyderabad
+107,Test Customer,testcustomer@gmail.com,27,Hyderabad
+108,New Batch User,batchuser@gmail.com,29,Pune

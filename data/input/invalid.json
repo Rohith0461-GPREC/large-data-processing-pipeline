@@ -1,0 +1,7 @@
+[
+  {
+    "customer_id": 401,
+    "customer_name": "Test User",
+    "email": "test@gmail.com",
+    "age": 25,
+    "city": "Hyderabad"

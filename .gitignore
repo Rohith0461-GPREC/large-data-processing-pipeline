@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+
+# Generated data
+data/input/large_customers.csv
+data/output/*.db
+data/rejected/*.csv

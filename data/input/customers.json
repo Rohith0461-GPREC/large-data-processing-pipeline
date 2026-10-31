@@ -1,0 +1,24 @@
+
+[
+    {
+        "customer_id": "201",
+        "customer_name": "Rohit",
+        "email": "rohit@gmail.com",
+        "age": "25",
+        "city": "Hyderabad"
+    },
+    {
+        "customer_id": "202",
+        "customer_name": "Sneha",
+        "email": "sneha@gmail.com",
+        "age": "28",
+        "city": "Bangalore"
+    },
+    {
+        "customer_id": "203",
+        "customer_name": "Kiran",
+        "email": "kiran@gmail.com",
+        "age": "22",
+        "city": "Chennai"
+    }
+]
