@@ -114,7 +114,7 @@ The pipeline also supports custom input paths and chunk sizes through the `run_p
 pytest -v
 ```
 
-**Latest test result: 14 tests passed.**
+**Latest test result: 17 tests passed.**
 
 The test suite covers validation, transformation, CSV and JSON ingestion, database operations, and pipeline execution.
 
