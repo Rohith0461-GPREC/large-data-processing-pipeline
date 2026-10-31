@@ -2,33 +2,38 @@
 
 ## Project Overview
 
-A Python-based data processing pipeline designed to process large CSV and JSON files efficiently using chunk-based ingestion.
+A Python-based data processing pipeline designed to efficiently process large CSV and JSON files using memory-efficient chunk-based ingestion and streaming techniques.
 
-The pipeline validates records, transforms valid data, stores customers in an SQLite database, and quarantines invalid records.
+The pipeline validates input schemas and individual records, transforms valid customer data, stores processed records in an SQLite database, and quarantines invalid records for further inspection.
 
 ## Key Features
 
 - Chunk-based CSV ingestion
-- Streaming JSON ingestion using ijson
-- Schema and record-level validation
+- Streaming JSON ingestion using `ijson`
+- Input schema validation
+- Record-level data validation
 - Data transformation and standardization
 - SQLite database integration
 - Duplicate detection and idempotent processing
-- Rejected record handling
+- Rejected record handling with error reasons
 - Execution time and memory monitoring
-- Record reconciliation
+- Record reconciliation and processing metrics
+- Pipeline execution logging
 - Automated unit and integration tests
 - Synthetic data generation for 100,000+ records
-- Chunk-size benchmarking
+- Chunk-size performance benchmarking
+- Failed pipeline execution tracking
 
 ## Technology Stack
 
-- Python 3.11
-- SQLite
-- CSV
-- ijson
-- pytest
-- tracemalloc
+| Technology | Purpose |
+|---|---|
+| Python 3.11 | Core programming language |
+| SQLite | Data storage |
+| CSV | Structured input processing |
+| ijson | Streaming JSON ingestion |
+| pytest | Automated testing |
+| tracemalloc | Python memory monitoring |
 
 ## Project Structure
 
@@ -49,7 +54,12 @@ large-data-processing-pipeline/
 ├── scripts/
 │   ├── generate_data.py
 │   └── benchmark.py
+├── reports/
+│   └── benchmark_results.md
 ├── requirements.txt
+├── pytest.ini
+├── ARCHITECTURE.md
+├── DATA_DICTIONARY.md
 └── README.md
 ```
 
@@ -58,7 +68,7 @@ large-data-processing-pipeline/
 Clone the repository:
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Rohith0461-GPREC/large-data-processing-pipeline.git
 cd large-data-processing-pipeline
 ```
 
@@ -86,7 +96,7 @@ pip install -r requirements.txt
 python scripts/generate_data.py
 ```
 
-This generates 100,000 synthetic customer records.
+This generates 100,000 synthetic customer records in `data/input/large_customers.csv`.
 
 ## Run the Pipeline
 
@@ -94,42 +104,80 @@ This generates 100,000 synthetic customer records.
 python -m src.pipeline
 ```
 
-To process a different input file, call `run_pipeline()` with its path and desired chunk size.
+The default input file is `data/input/customers.csv`.
 
-## Run Tests
+The pipeline also supports custom input paths and chunk sizes through the `run_pipeline()` function.
+
+## Run Automated Tests
 
 ```bash
 pytest -v
 ```
 
-## Benchmark
+**Latest test result: 14 tests passed.**
+
+The test suite covers validation, transformation, CSV and JSON ingestion, database operations, and pipeline execution.
+
+## Performance Benchmarking
 
 ```bash
 python scripts/benchmark.py
 ```
 
-The benchmark compares different chunk sizes using execution time and memory measurements.
+The benchmark evaluates different chunk sizes using execution time and Python memory measurements.
 
-## Database
+### Benchmark Results
 
-The pipeline stores customer records and execution metrics in SQLite:
+Tested with 100,000 synthetic customer records.
 
-- `customers`: processed customer records
-- `pipeline_runs`: execution metrics and reconciliation status
+| Chunk Size | Execution Time | Peak Memory |
+|---:|---:|---:|
+| 500 | 3.9651 sec | 0.71 MB |
+| 1,000 | 2.9204 sec | 1.37 MB |
+| 5,000 | 2.3888 sec | 6.67 MB |
+| 10,000 | 2.3908 sec | 13.31 MB |
 
-## Current Test Results
+In this benchmark run, a chunk size of 5,000 provided the best observed execution time.
 
-11 automated tests passed during the latest test run.
+Results may vary depending on hardware and system conditions. These measurements are from a single benchmark run.
+
+See `reports/benchmark_results.md` for the detailed results.
+
+## Database Design
+
+The pipeline uses SQLite with two main tables:
+
+- **customers:** Stores validated and transformed customer records.
+- **pipeline_runs:** Stores execution metrics, record counts, timestamps, and pipeline status.
+
+## Error Handling and Reconciliation
+
+- Invalid records are written to separate rejected-record files.
+- Duplicate customer IDs are ignored during database insertion.
+- Pipeline failures are logged.
+- Processing counts are reconciled to identify unaccounted records.
+- Execution metrics are stored for monitored pipeline runs.
+
+## Documentation
+
+Additional project documentation:
+
+- `ARCHITECTURE.md` – Pipeline architecture and processing flow.
+- `DATA_DICTIONARY.md` – Input fields and database metrics.
 
 ## Performance Notes
 
-The pipeline was tested with 100,000 synthetic customer records. The observed performance depends on the machine, database state, and chunk size.
+The pipeline was tested using 100,000 synthetic customer records.
 
-Memory measurements using `tracemalloc` represent Python-tracked memory, not total system RAM.
+CSV processing uses chunk-based ingestion, while JSON processing uses streaming with `ijson`.
+
+Memory measurements using `tracemalloc` represent Python-tracked memory and not total system RAM.
 
 ## Future Improvements
 
-- Stronger error handling and failed-run tracking
-- More comprehensive performance benchmarking with fresh databases
-- Additional schema and malformed-input tests
-- Architecture and data dictionary documentation
+- Process-level RAM monitoring
+- Stronger error recovery and retry mechanisms
+- More extensive malformed-input and edge-case testing
+- Additional input formats
+- Improved database transaction management
+- Larger-scale performance testing
